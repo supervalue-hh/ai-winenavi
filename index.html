@@ -502,7 +502,7 @@ input[type=range]::-webkit-slider-thumb {
   window.checkPw=function(){
     var v=document.getElementById('pwInput').value;
     if(v===PW){sessionStorage.setItem(SK,'1');var g=document.getElementById('pwGate');g.style.transition='opacity 0.3s';g.style.opacity='0';setTimeout(function(){g.style.display='none';},300);}
-    else{var e=document.getElementById('pwError');e.textContent='パスワードが違います';document.getElementById('pwInput').value='';document.getElementById('pwInput').focus();setTimeout(function(){e.textContent='';},3000);}
+    else{var e=document.getElementById('pwError');e.textContent='パスワードが違います。管理者にお問い合わせください。';document.getElementById('pwInput').value='';document.getElementById('pwInput').focus();setTimeout(function(){e.textContent='';},3000);}
   };
 })();
 </script>
