@@ -2015,58 +2015,63 @@ function renderRankingPanel() {
 var _voiceMuted = false;
 
 function toggleVoice() {
-  _voiceMuted = !_voiceMuted;
-  var btn = document.getElementById('voiceToggleBtn');
-  if (btn) btn.textContent = _voiceMuted ? '🔇 音声OFF' : '🔊 音声ON';
-  if (_voiceMuted) window.speechSynthesis.cancel();
+  try {
+    _voiceMuted = !_voiceMuted;
+    var btn = document.getElementById('voiceToggleBtn');
+    if (btn) btn.textContent = _voiceMuted ? '🔇 音声OFF' : '🔊 音声ON';
+    if (_voiceMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+  } catch(e) {}
 }
 
 function speakText(text) {
-  if (_voiceMuted || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  var utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'ja-JP';
-  utter.rate = 0.92;
-  utter.pitch = 1.0;
-
-  // 日本語音声を優先して選択
-  var voices = window.speechSynthesis.getVoices();
-  var jaVoice = voices.find(function(v) { return v.lang === 'ja-JP' && v.localService; })
-             || voices.find(function(v) { return v.lang === 'ja-JP'; });
-  if (jaVoice) utter.voice = jaVoice;
-
-  window.speechSynthesis.speak(utter);
+  try {
+    if (_voiceMuted || !window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    var utter = new SpeechSynthesisUtterance(text);
+    utter.lang = 'ja-JP';
+    utter.rate = 0.92;
+    utter.pitch = 1.0;
+    var voices = window.speechSynthesis.getVoices();
+    var jaVoice = voices.find(function(v) { return v.lang === 'ja-JP' && v.localService; })
+               || voices.find(function(v) { return v.lang === 'ja-JP'; });
+    if (jaVoice) utter.voice = jaVoice;
+    window.speechSynthesis.speak(utter);
+  } catch(e) {}
 }
 
 function speakResultComment(dish, scored) {
-  if (!dish || !scored || scored.length === 0) return;
-  var top = scored[0].wine;
-  var wineName = top['商品名略称'] || '';
-  var color = top['色'] || '';
-  var colorWord = color === '赤' ? '赤ワイン' : color === '白' ? '白ワイン' : color === 'ロゼ' ? 'ロゼワイン' : 'ワイン';
-
-  var phrases = [
-    dish + 'には、' + colorWord + 'の' + wineName + 'がよく合いますよ。',
-    'いらっしゃいませ。' + dish + 'でしたら、' + wineName + 'をおすすめします。',
-    dish + 'のお供に、' + wineName + 'はいかがでしょうか。',
-  ];
-  var text = phrases[Math.floor(Math.random() * phrases.length)];
-  // 音声ロード待ちに対応
-  if (window.speechSynthesis.getVoices().length === 0) {
-    window.speechSynthesis.addEventListener('voiceschanged', function onV() {
-      window.speechSynthesis.removeEventListener('voiceschanged', onV);
+  try {
+    if (_voiceMuted || !window.speechSynthesis) return;
+    if (!dish || !scored || scored.length === 0) return;
+    var top = scored[0].wine;
+    var wineName = top['商品名略称'] || '';
+    var color = top['色'] || '';
+    var colorWord = color === '赤' ? '赤ワイン' : color === '白' ? '白ワイン' : color === 'ロゼ' ? 'ロゼワイン' : 'ワイン';
+    var phrases = [
+      dish + 'には、' + colorWord + 'の' + wineName + 'がよく合いますよ。',
+      'いらっしゃいませ。' + dish + 'でしたら、' + wineName + 'をおすすめします。',
+      dish + 'のお供に、' + wineName + 'はいかがでしょうか。',
+    ];
+    var text = phrases[Math.floor(Math.random() * phrases.length)];
+    var voices = window.speechSynthesis.getVoices();
+    if (voices.length === 0) {
+      window.speechSynthesis.addEventListener('voiceschanged', function onV() {
+        try {
+          window.speechSynthesis.removeEventListener('voiceschanged', onV);
+          speakText(text);
+        } catch(e) {}
+      });
+    } else {
       speakText(text);
-    });
-  } else {
-    speakText(text);
-  }
+    }
+  } catch(e) {}
 }
 
 function setSommelierImg(mode) {
   var img = document.getElementById('sommelierImg');
   if (!img) return;
   var src = mode === 'result'
-    ? 'ChatGPT Image 2026年6月12日 16_12_59.png'
+    ? 'sommelier-result.png'
     : 'ChatGPT Image 2026年6月12日 15_22_39.png';
   img.style.opacity = '0';
   setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 300);
