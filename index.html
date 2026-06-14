@@ -136,6 +136,25 @@ body {
 .wine-option-name { font-weight: 600; flex: 1; color: #111; }
 .wine-option-meta { font-size: 11px; color: #999; white-space: nowrap; }
 
+/* ── 料理入力ドロップダウン ── */
+.dish-dropdown {
+  position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+  background: #fff; border: 1px solid #e8e8e8;
+  max-height: 260px; overflow-y: auto; z-index: 200; display: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.dish-dropdown.open { display: block; }
+.dish-option {
+  padding: 11px 16px; cursor: pointer; font-size: 13px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex; align-items: center; gap: 10px; transition: background 0.1s;
+}
+.dish-option:last-child { border-bottom: none; }
+.dish-option:hover, .dish-option.selected { background: #f5f5f5; }
+.dish-option-emoji { font-size: 16px; width: 22px; text-align: center; }
+.dish-option-name { font-weight: 600; flex: 1; color: #111; }
+.dish-option-tags { font-size: 11px; color: #999; white-space: nowrap; }
+
 /* ── 料理提案カード（ワイン逆引き） ── */
 .dish-cards { display: flex; flex-direction: column; gap: 1px; margin-bottom: 40px; background: #e8e8e8; }
 .dish-card {
@@ -495,6 +514,7 @@ input[type=range]::-webkit-slider-thumb {
           <button class="mic-btn" id="micBtnDish" onclick="startVoiceInput('dishInput', this)" title="音声入力">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
           </button>
+          <div class="dish-dropdown" id="dishDropdown"></div>
         </div>
         <div class="filters">
           <!-- 予算スライダー -->
@@ -2386,6 +2406,64 @@ function purgeNonCanonicalSearches() {
   } catch(e) {}
 }
 
+// ─── 料理名オートコンプリート ──────────────────────────────────
+var _dishDropdownIndex = -1;
+
+function searchDishDropdown(val) {
+  var dd = document.getElementById('dishDropdown');
+  var v  = val.replace(/[\s　]/g, '');
+  if (v.length === 0) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+
+  // DISH_DICTの全キーを検索し、マッチしたエントリの正規名を収集
+  var seen    = {};
+  var results = [];
+  DISH_DICT.forEach(function(entry) {
+    for (var j = 0; j < entry.keys.length; j++) {
+      var k = entry.keys[j];
+      if (k.indexOf(v) !== -1 || v.indexOf(k) !== -1 ||
+          k.replace(/[\s　]/g,'').indexOf(v) !== -1) {
+        var canonical = entry.keys[0];
+        if (!seen[canonical]) {
+          seen[canonical] = true;
+          results.push({ name: canonical, tags: entry.tags, reason: entry.reason });
+        }
+        break;
+      }
+    }
+  });
+
+  if (results.length === 0) { dd.classList.remove('open'); dd.innerHTML = ''; return; }
+
+  dd._results = results;
+  _dishDropdownIndex = -1;
+  dd.innerHTML = results.slice(0, 10).map(function(r, i) {
+    var em = getDishEmoji(r.tags.join(' ') + ' ' + r.name);
+    var tag = r.tags[0] || '';
+    return '<div class="dish-option" onmousedown="selectDishOption(' + i + ')">' +
+      '<span class="dish-option-emoji">' + em + '</span>' +
+      '<span class="dish-option-name">' + r.name + '</span>' +
+      '<span class="dish-option-tags">' + tag + '</span>' +
+    '</div>';
+  }).join('');
+  dd.classList.add('open');
+}
+
+function selectDishOption(idx) {
+  var dd = document.getElementById('dishDropdown');
+  if (!dd._results || !dd._results[idx]) return;
+  document.getElementById('dishInput').value = dd._results[idx].name;
+  dd.classList.remove('open');
+  dd.innerHTML = '';
+  _dishDropdownIndex = -1;
+  suggest();
+}
+
+function closeDishDropdown() {
+  var dd = document.getElementById('dishDropdown');
+  dd.classList.remove('open');
+  _dishDropdownIndex = -1;
+}
+
 // ─── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('dishInput').addEventListener('keydown', function(e) {
@@ -2409,6 +2487,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // ランキングパネル初期表示
   renderRankingPanel();
+
+  // 料理入力オートコンプリート
+  var dishInput = document.getElementById('dishInput');
+  dishInput.addEventListener('input', function() {
+    searchDishDropdown(this.value);
+  });
+  dishInput.addEventListener('keydown', function(e) {
+    var dd   = document.getElementById('dishDropdown');
+    var opts = dd.querySelectorAll('.dish-option');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      _dishDropdownIndex = Math.min(_dishDropdownIndex + 1, opts.length - 1);
+      opts.forEach(function(o, i) { o.classList.toggle('selected', i === _dishDropdownIndex); });
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      _dishDropdownIndex = Math.max(_dishDropdownIndex - 1, -1);
+      opts.forEach(function(o, i) { o.classList.toggle('selected', i === _dishDropdownIndex); });
+    } else if (e.key === 'Enter') {
+      if (_dishDropdownIndex >= 0 && dd._results) {
+        e.preventDefault();
+        selectDishOption(_dishDropdownIndex);
+      }
+    } else if (e.key === 'Escape') {
+      closeDishDropdown();
+    }
+  });
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.dish-input-wrap')) closeDishDropdown();
+  });
 
   // ワイン入力オートコンプリート
   var wineInput = document.getElementById('wineInput');
