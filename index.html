@@ -1444,6 +1444,22 @@ function quickDish(name) {
   suggest();
 }
 
+function getCanonicalName(dish, matched) {
+  if (!matched || !matched.keys || !matched.keys.length) return dish;
+  var d = dish.replace(/[\s　]/g, '');
+  var best = matched.keys[0];
+  var bestScore = -1;
+  matched.keys.forEach(function(key) {
+    var score = 0;
+    // 2文字のn-gramで重複度を測る
+    for (var s = 0; s <= key.length - 2; s++) {
+      if (d.indexOf(key.substring(s, s + 2)) !== -1) score++;
+    }
+    if (score > bestScore) { bestScore = score; best = key; }
+  });
+  return best;
+}
+
 function suggest() {
   var dish = document.getElementById('dishInput').value.trim();
   if (!dish) { showInputError('料理名を入力してください'); return; }
@@ -1457,7 +1473,7 @@ function suggest() {
   }
 
   // 表記ゆれを正式名称に統一（例: 酒飲みムニエル → 鮭のムニエル）
-  var canonicalDish = (matched && matched.keys && matched.keys[0]) ? matched.keys[0] : dish;
+  var canonicalDish = getCanonicalName(dish, matched);
 
   recordSearch(canonicalDish);
   renderRankingPanel();
