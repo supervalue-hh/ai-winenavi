@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>大原葡萄酒場 AIワインナビ</title>
+<title>AIワインナビ</title>
 <script src="wine_data.js"></script>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
@@ -434,7 +434,7 @@ input[type=range]::-webkit-slider-thumb {
 <header class="header">
   <div class="header-logo">🍷</div>
   <div class="header-text">
-    <div class="header-title">大原葡萄酒場 AIワインナビ</div>
+    <div class="header-title">AIワインナビ</div>
     <div class="header-sub">247商品のワインデータベース</div>
   </div>
   <div class="header-badge">β VERSION</div>
@@ -458,11 +458,6 @@ input[type=range]::-webkit-slider-thumb {
       <div>
         <div class="hero-stat-num">38</div>
         <div class="hero-stat-label">対応料理カテゴリ</div>
-      </div>
-      <div style="width:1px;background:var(--bord);margin:4px 0;"></div>
-      <div>
-        <div class="hero-stat-num">大原葡萄酒場</div>
-        <div class="hero-stat-label"></div>
       </div>
     </div>
   </div>
@@ -515,10 +510,6 @@ input[type=range]::-webkit-slider-thumb {
           ワインを提案
         </button>
       </div>
-      <div class="quick-wrap">
-        <div class="quick-label" id="quickDishLabel">よく選ばれるお料理</div>
-        <div class="quick-dishes" id="quickDishList"></div>
-      </div>
     </div>
 
     <!-- ワイン入力パネル -->
@@ -546,12 +537,12 @@ input[type=range]::-webkit-slider-thumb {
   <!-- 検索ランキング・履歴パネル -->
   <div class="ranking-panel" id="rankingPanel" style="display:none;">
     <div>
-      <div class="ranking-section-title">🏆 人気の料理ランキング</div>
-      <div id="rankingList"></div>
+      <div class="ranking-section-title">🏆 <span id="rankingTitleCurrent"></span></div>
+      <div id="rankingListCurrent"></div>
     </div>
     <div>
-      <div class="ranking-section-title">🕐 最近の検索</div>
-      <div class="recent-chips" id="recentList"></div>
+      <div class="ranking-section-title">📅 <span id="rankingTitlePrev"></span></div>
+      <div id="rankingListPrev"></div>
     </div>
   </div>
 
@@ -1446,7 +1437,7 @@ function suggest() {
   }
 
   recordSearch(dish);
-  renderRankingPanel(); renderQuickDishes();
+  renderRankingPanel();
 
   // 全結果を保持してページング
   _allScored  = result;
@@ -1605,15 +1596,24 @@ function getTagClass(cat, color) {
 var RANK_LABELS = ['', 'BEST MATCH', '2ND PICK', '3RD PICK', '4TH', '5TH', '6TH', '7TH', '8TH', '9TH'];
 var RANK_ICONS  = ['', '🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'];
 
-// ─── localStorage 検索記録 ────────────────────────────────────
-var LS_COUNTS = 'wbh_search_counts';
+// ─── localStorage 検索記録（月別） ───────────────────────────
 var LS_RECENT = 'wbh_recent_searches';
+
+function _monthKey(date) {
+  var y = date.getFullYear();
+  var m = ('0' + (date.getMonth() + 1)).slice(-2);
+  return 'wbh_counts_' + y + '-' + m;
+}
+function _monthLabel(date) {
+  return (date.getMonth() + 1) + '月の人気料理ランキング';
+}
 
 function recordSearch(dish) {
   try {
-    var counts = JSON.parse(localStorage.getItem(LS_COUNTS) || '{}');
+    var key = _monthKey(new Date());
+    var counts = JSON.parse(localStorage.getItem(key) || '{}');
     counts[dish] = (counts[dish] || 0) + 1;
-    localStorage.setItem(LS_COUNTS, JSON.stringify(counts));
+    localStorage.setItem(key, JSON.stringify(counts));
 
     var recent = JSON.parse(localStorage.getItem(LS_RECENT) || '[]');
     recent = recent.filter(function(r) { return r !== dish; });
@@ -1622,33 +1622,39 @@ function recordSearch(dish) {
   } catch(e) {}
 }
 
+function _buildRankHtml(counts) {
+  var numCls = ['','rank-num-1','rank-num-2','rank-num-3','rank-num-4','rank-num-5'];
+  var ranking = Object.keys(counts)
+    .map(function(k) { return { dish: k, count: counts[k] }; })
+    .sort(function(a, b) { return b.count - a.count; })
+    .slice(0, 5);
+  if (ranking.length === 0) return '<div style="color:var(--muted);font-size:12px;">まだ検索記録がありません</div>';
+  return ranking.map(function(r, i) {
+    return '<div class="ranking-item" onclick="quickDish(\'' + r.dish.replace(/'/g,"&#39;") + '\')">' +
+      '<span class="ranking-num ' + numCls[i+1] + '">' + (i+1) + '</span>' +
+      '<span class="ranking-dish">' + r.dish + '</span>' +
+      '<span class="ranking-count">' + r.count + '回</span>' +
+    '</div>';
+  }).join('');
+}
+
 function renderRankingPanel() {
   try {
-    var counts = JSON.parse(localStorage.getItem(LS_COUNTS) || '{}');
-    var recent = JSON.parse(localStorage.getItem(LS_RECENT) || '[]');
-    var ranking = Object.keys(counts)
-      .map(function(k) { return { dish: k, count: counts[k] }; })
-      .sort(function(a, b) { return b.count - a.count; })
-      .slice(0, 5);
+    var now = new Date();
+    var prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
+    var countsCur  = JSON.parse(localStorage.getItem(_monthKey(now))  || '{}');
+    var countsPrev = JSON.parse(localStorage.getItem(_monthKey(prev)) || '{}');
 
     var panel = document.getElementById('rankingPanel');
-    if (ranking.length === 0 && recent.length === 0) { panel.style.display = 'none'; return; }
+    var hasCur  = Object.keys(countsCur).length > 0;
+    var hasPrev = Object.keys(countsPrev).length > 0;
+    if (!hasCur && !hasPrev) { panel.style.display = 'none'; return; }
 
-    var numCls = ['','rank-num-1','rank-num-2','rank-num-3','rank-num-4','rank-num-5'];
-    var rankHtml = ranking.map(function(r, i) {
-      return '<div class="ranking-item" onclick="quickDish(\'' + r.dish.replace(/'/g,"&#39;") + '\')">' +
-        '<span class="ranking-num ' + numCls[i+1] + '">' + (i+1) + '</span>' +
-        '<span class="ranking-dish">' + r.dish + '</span>' +
-        '<span class="ranking-count">' + r.count + '回</span>' +
-      '</div>';
-    }).join('');
-
-    var recentHtml = recent.slice(0, 8).map(function(r) {
-      return '<span class="recent-chip" onclick="quickDish(\'' + r.replace(/'/g,"&#39;") + '\')">' + r + '</span>';
-    }).join('');
-
-    document.getElementById('rankingList').innerHTML = rankHtml || '<div style="color:var(--muted);font-size:12px;">まだ検索記録がありません</div>';
-    document.getElementById('recentList').innerHTML  = recentHtml;
+    document.getElementById('rankingTitleCurrent').textContent = _monthLabel(now);
+    document.getElementById('rankingTitlePrev').textContent    = _monthLabel(prev);
+    document.getElementById('rankingListCurrent').innerHTML = _buildRankHtml(countsCur);
+    document.getElementById('rankingListPrev').innerHTML    = _buildRankHtml(countsPrev);
     panel.style.display = 'grid';
   } catch(e) {}
 }
@@ -2258,7 +2264,7 @@ document.addEventListener('DOMContentLoaded', function() {
   if (slider) updateSlider(slider);
 
   // ランキングパネル初期表示
-  renderRankingPanel(); renderQuickDishes();
+  renderRankingPanel();
 
   // ワイン入力オートコンプリート
   var wineInput = document.getElementById('wineInput');
