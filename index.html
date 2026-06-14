@@ -177,15 +177,25 @@ body {
   color: #999; margin-bottom: 14px;
 }
 .search-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.dish-input-wrap { position: relative; flex: 1; min-width: 200px; display: flex; }
 .dish-input {
-  flex: 1; min-width: 200px;
-  height: 48px; padding: 0 16px;
+  flex: 1;
+  height: 48px; padding: 0 44px 0 16px;
   border: 1px solid #e8e8e8; background: #fff;
   color: #111; font-size: 15px; font-family: inherit;
   outline: none; transition: border-color 0.15s;
 }
 .dish-input::placeholder { color: #bbb; }
 .dish-input:focus { border-color: #111; }
+.mic-btn {
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 44px; border: none; background: transparent;
+  color: #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: color 0.15s; font-size: 18px;
+}
+.mic-btn:hover { color: #8B1A2C; }
+.mic-btn.recording { color: #8B1A2C; animation: mic-pulse 0.7s infinite alternate; }
+@keyframes mic-pulse { from { opacity: 1; } to { opacity: 0.3; } }
 .filters { display: flex; gap: 8px; flex-wrap: wrap; }
 select {
   height: 48px; padding: 0 32px 0 12px;
@@ -480,7 +490,12 @@ input[type=range]::-webkit-slider-thumb {
 
       <div class="search-eyebrow">今夜のお料理を教えてください</div>
       <div class="search-row">
-        <input class="dish-input" id="dishInput" type="text" placeholder="例：牛肉のステーキ、鮭のムニエル、餃子…" />
+        <div class="dish-input-wrap">
+          <input class="dish-input" id="dishInput" type="text" placeholder="例：牛肉のステーキ、鮭のムニエル、餃子…" />
+          <button class="mic-btn" id="micBtnDish" onclick="startVoiceInput('dishInput', this)" title="音声入力">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+          </button>
+        </div>
         <div class="filters">
           <!-- 予算スライダー -->
           <div class="slider-wrap">
@@ -511,6 +526,9 @@ input[type=range]::-webkit-slider-thumb {
       <div class="search-row">
         <div class="wine-input-wrap">
           <input class="wine-input" id="wineInput" type="text" placeholder="例：サンタ・ヘレナ、シャブリ、モンテス…" autocomplete="off" />
+          <button class="mic-btn" id="micBtnWine" onclick="startVoiceInput('wineInput', this)" title="音声入力" style="position:absolute;right:0;top:0;bottom:0;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+          </button>
           <div class="wine-dropdown" id="wineDropdown"></div>
         </div>
         <button class="btn-suggest" onclick="suggestByWine()">
@@ -1673,6 +1691,69 @@ function renderRankingPanel() {
     document.getElementById('rankingListPrev').innerHTML    = _buildRankHtml(countsPrev);
     panel.style.display = 'grid';
   } catch(e) {}
+}
+
+// ─── 音声入力 ────────────────────────────────────────────────────
+var _voiceRecognition = null;
+var _voiceActiveBtn   = null;
+
+function startVoiceInput(targetId, btn) {
+  try {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('このブラウザは音声入力に対応していません。\nChrome または Safari をお試しください。'); return; }
+
+    // 同じボタンを再クリック → 停止
+    if (_voiceRecognition && _voiceActiveBtn === btn) {
+      _voiceRecognition.stop();
+      return;
+    }
+    // 別の認識が動いていたら停止
+    if (_voiceRecognition) { try { _voiceRecognition.stop(); } catch(e) {} }
+
+    var rec = new SR();
+    rec.lang = 'ja-JP';
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+    _voiceRecognition = rec;
+    _voiceActiveBtn   = btn;
+
+    btn.classList.add('recording');
+
+    rec.onresult = function(e) {
+      var transcript = '';
+      for (var i = e.resultIndex; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      document.getElementById(targetId).value = transcript;
+      // ワイン入力ならオートコンプリートをトリガー
+      if (targetId === 'wineInput') {
+        document.getElementById(targetId).dispatchEvent(new Event('input'));
+      }
+    };
+
+    rec.onend = function() {
+      btn.classList.remove('recording');
+      _voiceRecognition = null;
+      _voiceActiveBtn   = null;
+      // 料理入力なら確定後に自動検索
+      if (targetId === 'dishInput' && document.getElementById('dishInput').value.trim()) {
+        setTimeout(function() { suggest(); }, 200);
+      }
+    };
+
+    rec.onerror = function(e) {
+      btn.classList.remove('recording');
+      _voiceRecognition = null;
+      _voiceActiveBtn   = null;
+      if (e.error !== 'no-speech' && e.error !== 'aborted') {
+        alert('音声入力エラー: ' + e.error);
+      }
+    };
+
+    rec.start();
+  } catch(e) {
+    alert('音声入力を開始できませんでした。\nマイクの使用を許可してください。');
+  }
 }
 
 // ─── 音声読み上げ ────────────────────────────────────────────────
