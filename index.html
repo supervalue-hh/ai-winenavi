@@ -2288,6 +2288,29 @@ function renderWineReverseResults(wine, dishes) {
   cardsEl.innerHTML = html;
   recipeEl.innerHTML = '';
 
+  // TTS
+  if (dishes.length > 0) {
+    try {
+      var wineName = cleanNameForSpeech(wine['商品名略称'] || '');
+      var dishName = dishes[0].keys[0] || '';
+      if (wineName && dishName) {
+        var phrases = [
+          wineName + 'には、' + dishName + 'がよく合いますよ。',
+          wineName + 'のおともに、' + dishName + 'はいかがでしょうか。',
+        ];
+        var text = phrases[Math.floor(Math.random() * phrases.length)];
+        var voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+        if (voices.length === 0 && window.speechSynthesis) {
+          window.speechSynthesis.addEventListener('voiceschanged', function onV() {
+            try { window.speechSynthesis.removeEventListener('voiceschanged', onV); speakText(text); } catch(e) {}
+          });
+        } else {
+          speakText(text);
+        }
+      }
+    } catch(e) {}
+  }
+
   resultsEl.classList.add('visible');
   setTimeout(function() {
     window.scrollTo({ top: resultsEl.offsetTop - 80, behavior: 'smooth' });
@@ -2345,6 +2368,24 @@ function renderQuickDishes() {
   }).join('');
 }
 
+// ─── 非正規名クリーンアップ ────────────────────────────────────
+function purgeNonCanonicalSearches() {
+  try {
+    for (var i = 0; i < localStorage.length; i++) {
+      var key = localStorage.key(i);
+      if (!key || key.indexOf('wbh_counts_') !== 0) continue;
+      var counts = JSON.parse(localStorage.getItem(key) || '{}');
+      var cleaned = {};
+      Object.keys(counts).forEach(function(name) {
+        var matched = matchDish(name);
+        var canonical = getCanonicalName(name, matched);
+        cleaned[canonical] = (cleaned[canonical] || 0) + counts[name];
+      });
+      localStorage.setItem(key, JSON.stringify(cleaned));
+    }
+  } catch(e) {}
+}
+
 // ─── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('dishInput').addEventListener('keydown', function(e) {
@@ -2362,6 +2403,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // スライダー初期化
   var slider = document.getElementById('priceSlider');
   if (slider) updateSlider(slider);
+
+  // 非正規名をlocalStorageから削除・正規名に統合
+  purgeNonCanonicalSearches();
 
   // ランキングパネル初期表示
   renderRankingPanel();
