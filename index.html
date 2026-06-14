@@ -197,9 +197,23 @@ body {
 }
 .search-row { display: flex; gap: 8px; flex-wrap: wrap; }
 .dish-input-wrap { position: relative; flex: 1; min-width: 200px; display: flex; }
+/* ── デフォルト料理ボタン ── */
+.default-dishes {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  margin-bottom: 12px;
+}
+.default-dish-label { font-size: 11px; color: #999; white-space: nowrap; }
+.default-dish-btn {
+  height: 30px; padding: 0 12px;
+  border: 1px solid #e8e8e8; background: #fff;
+  color: #444; font-size: 12px; font-family: inherit;
+  cursor: pointer; transition: all 0.12s; border-radius: 0;
+}
+.default-dish-btn:hover { border-color: #8B1A2C; color: #8B1A2C; }
+
 .dish-input {
   flex: 1;
-  height: 48px; padding: 0 44px 0 16px;
+  height: 48px; padding: 0 76px 0 16px;
   border: 1px solid #e8e8e8; background: #fff;
   color: #111; font-size: 15px; font-family: inherit;
   outline: none; transition: border-color 0.15s;
@@ -208,13 +222,33 @@ body {
 .dish-input:focus { border-color: #111; }
 .mic-btn {
   position: absolute; right: 0; top: 0; bottom: 0;
-  width: 44px; border: none; background: transparent;
-  color: #bbb; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  transition: color 0.15s; font-size: 18px;
+  width: 72px; border: none; border-left: 1px solid #e8e8e8; background: #fafafa;
+  color: #888; cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px;
+  transition: all 0.15s;
 }
-.mic-btn:hover { color: #8B1A2C; }
-.mic-btn.recording { color: #8B1A2C; animation: mic-pulse 0.7s infinite alternate; }
-@keyframes mic-pulse { from { opacity: 1; } to { opacity: 0.3; } }
+.mic-label { font-size: 9px; font-weight: 600; letter-spacing: 0.05em; }
+.mic-btn:hover { background: #f0f0f0; color: #8B1A2C; }
+.mic-btn.recording { background: #fff0f2; color: #8B1A2C; border-left-color: #8B1A2C; animation: mic-pulse 0.7s infinite alternate; }
+@keyframes mic-pulse { from { opacity: 1; } to { opacity: 0.4; } }
+
+/* ── スコア品質ラベル ── */
+.match-badge {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  padding: 2px 8px; margin: 6px 0 2px;
+}
+.match-best { color: #8B1A2C; }
+.match-good { color: #5a7a4a; }
+.match-ok   { color: #888; }
+
+/* ── 逆引きリンク ── */
+.btn-reverse {
+  margin-top: 10px; height: 28px; padding: 0 12px;
+  border: 1px solid #e8e8e8; background: transparent;
+  color: #888; font-size: 11px; font-family: inherit;
+  cursor: pointer; transition: all 0.12s; display: inline-flex; align-items: center; gap: 4px;
+}
+.btn-reverse:hover { border-color: #111; color: #111; }
 .filters { display: flex; gap: 8px; flex-wrap: wrap; }
 select {
   height: 48px; padding: 0 32px 0 12px;
@@ -508,11 +542,22 @@ input[type=range]::-webkit-slider-thumb {
     <div class="dish-search-panel" id="dishSearchPanel">
 
       <div class="search-eyebrow">今夜のお料理を教えてください</div>
+      <div class="default-dishes" id="defaultDishes">
+        <span class="default-dish-label">よく選ばれる料理：</span>
+        <button class="default-dish-btn" onclick="quickDish('マルゲリータ')">🍕 マルゲリータ</button>
+        <button class="default-dish-btn" onclick="quickDish('アトランティックサーモン')">🐟 アトランティックサーモン</button>
+        <button class="default-dish-btn" onclick="quickDish('焼肉')">🥩 焼肉</button>
+        <button class="default-dish-btn" onclick="quickDish('チーズケーキ')">🧀 チーズケーキ</button>
+        <button class="default-dish-btn" onclick="quickDish('ハンバーグ')">🍔 ハンバーグ</button>
+        <button class="default-dish-btn" onclick="quickDish('ステーキ')">🥩 ステーキ</button>
+        <button class="default-dish-btn" onclick="quickDish('たこ焼き')">🐙 たこ焼き</button>
+      </div>
       <div class="search-row">
         <div class="dish-input-wrap">
           <input class="dish-input" id="dishInput" type="text" placeholder="例：牛肉のステーキ、鮭のムニエル、餃子…" />
-          <button class="mic-btn" id="micBtnDish" onclick="startVoiceInput('dishInput', this)" title="音声入力">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+          <button class="mic-btn" id="micBtnDish" onclick="startVoiceInput('dishInput', this)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
+            <span class="mic-label">声で検索</span>
           </button>
           <div class="dish-dropdown" id="dishDropdown"></div>
         </div>
@@ -616,7 +661,7 @@ var DISH_DICT = [
   { keys: ['刺身','お刺身','刺し身','マグロ','サーモン'], tags: ['魚料理','和食'], color: '白', body: 'ライト', reason: '辛口の白が生魚の繊細な旨みを引き立てます' },
   { keys: ['寿司','お寿司','すし'], tags: ['魚料理','和食','寿司'], color: '白', body: 'ライト', reason: '辛口の白や泡が酢飯と魚介に合います' },
   { keys: ['牡蠣','カキ','オイスター'], tags: ['魚料理','牡蠣','シーフード'], color: '白', body: 'ライト', reason: 'ミネラル感のある辛口白がベストマッチです' },
-  { keys: ['鮭','サーモン','鮭のムニエル','鮭のホイル焼き'], tags: ['魚料理'], color: null, body: 'ミディアム', reason: 'ピノノワールか辛口白が脂分と合います' },
+  { keys: ['鮭','サーモン','アトランティックサーモン','鮭のムニエル','鮭のホイル焼き'], tags: ['魚料理'], color: null, body: 'ミディアム', reason: 'サーモンの脂分にピノノワールか辛口白が合います' },
   { keys: ['白身魚','鯛','タイ','ひらめ','ヒラメ','スズキ'], tags: ['魚料理','シーフード'], color: '白', body: 'ライト', reason: '繊細な白身に辛口白が上品に合います' },
   { keys: ['エビ','海老','シュリンプ','えび'], tags: ['魚料理','シーフード'], color: '白', body: 'ライト', reason: 'シュッとした辛口白が旨みを引き出します' },
   { keys: ['貝','アサリ','ホタテ','ホタテ貝','帆立'], tags: ['魚料理','シーフード'], color: '白', body: 'ライト', reason: '磯の旨みに辛口白がよく合います' },
@@ -641,6 +686,7 @@ var DISH_DICT = [
   { keys: ['エスニック','タイ料理','ベトナム料理','インド料理'], tags: ['アジア料理','エスニック'], color: '白', body: 'ライト', reason: '香り豊かな白かロゼがエスニックに合います' },
   { keys: ['パエリア','スペイン料理'], tags: ['スペイン料理','魚料理'], color: null, body: 'ミディアム', reason: 'スペインワインがシーフードパエリアに合います' },
   // デザート・軽食
+  { keys: ['チーズケーキ','チーズタルト','レアチーズ','ベイクドチーズ'], tags: ['デザート','チーズ'], color: '白', body: 'ライト', reason: 'チーズケーキのクリーミーな甘みにはやや甘口の白や泡がぴったりです' },
   { keys: ['デザート','ケーキ','チョコレート','スイーツ'], tags: ['デザート','フルーツ'], color: null, body: 'ライト', reason: '甘口スパークリングやロゼが甘みに合います' },
   { keys: ['フルーツ','果物'], tags: ['デザート','フルーツ'], color: null, body: 'ライト', reason: '甘口ワインやスパークリングがフルーツに合います' },
   { keys: ['前菜','アペリティフ','オードブル'], tags: ['前菜','アペリティフ'], color: null, body: 'ライト', reason: '軽やかな泡や白が食欲を引き立てます' },
@@ -1537,7 +1583,7 @@ function suggest() {
   var result  = scoreWines(dish, matched);
 
   if (!matched && result.length === 0) {
-    showInputError('「' + dish + '」は料理名として認識できませんでした。\nステーキ・パスタ・刺身など、具体的な料理名を入力してください。');
+    showInputError('「' + dish + '」はまだ対応していない料理です。\n下のボタンから似た料理で試してみてください。', true);
     return;
   }
 
@@ -1572,29 +1618,28 @@ function loadMore() {
   }, 80);
 }
 
-function showInputError(msg) {
+function showInputError(msg, showSuggestions) {
   var input = document.getElementById('dishInput');
   input.style.borderColor = '#ef4444';
   input.style.boxShadow   = '0 0 0 3px rgba(239,68,68,0.18)';
-  setTimeout(function() {
-    input.style.borderColor = '';
-    input.style.boxShadow   = '';
-  }, 2000);
+  setTimeout(function() { input.style.borderColor = ''; input.style.boxShadow = ''; }, 2000);
 
   var errEl = document.getElementById('inputError');
   if (!errEl) {
     errEl = document.createElement('div');
     errEl.id = 'inputError';
-    errEl.style.cssText = [
-      'margin-top:10px','padding:12px 16px','border-radius:10px',
-      'background:rgba(239,68,68,0.1)','border:1px solid rgba(239,68,68,0.35)',
-      'color:#fca5a5','font-size:13px','line-height:1.6','white-space:pre-line'
-    ].join(';');
+    errEl.style.cssText = 'margin-top:10px;padding:12px 16px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);font-size:13px;line-height:1.8;color:#c0392b';
     input.parentNode.parentNode.appendChild(errEl);
   }
-  errEl.textContent = msg;
+  var sugg = showSuggestions
+    ? '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">' +
+      ['ステーキ','刺身','パスタ','唐揚げ','天ぷら','餃子','焼き鳥','カレー'].map(function(d) {
+        return '<button onclick="quickDish(\'' + d + '\')" style="height:26px;padding:0 10px;border:1px solid #e8e8e8;background:#fff;font-size:12px;font-family:inherit;cursor:pointer;">' + d + '</button>';
+      }).join('') + '</div>'
+    : '';
+  errEl.innerHTML = '⚠️ ' + msg + sugg;
   errEl.style.display = 'block';
-  setTimeout(function() { if (errEl) errEl.style.display = 'none'; }, 4000);
+  setTimeout(function() { if (errEl) errEl.style.display = 'none'; }, 8000);
 }
 
 function matchDish(dish) {
@@ -1693,6 +1738,24 @@ function scoreWines(dish, matched) {
   return scored;
 }
 
+function bodyLabel(b) {
+  if (b === 'フルボディ') return '重口（しっかり）';
+  if (b === 'ミディアム') return '中口（バランス型）';
+  if (b === 'ライト')    return '軽口（飲みやすい）';
+  return b;
+}
+function matchLabel(pct) {
+  if (pct >= 85) return '<span class="match-badge match-best">◎ 最高の組み合わせ</span>';
+  if (pct >= 65) return '<span class="match-badge match-good">○ よく合います</span>';
+  return '<span class="match-badge match-ok">△ 合います</span>';
+}
+function reverseSearchWine(name) {
+  document.getElementById('wineInput').value = name;
+  switchMode('wine');
+  selectedWine = findWineByName(name);
+  suggestByWine();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 function getTagClass(cat, color) {
   if (cat === 'スパークリング') return 'tag-spark';
   if (color === '赤') return 'tag-red';
@@ -1976,16 +2039,15 @@ function renderResults(dish, matched, scored, totalCount) {
         '<div class="wine-info">' +
           '<div class="wine-name">' + RANK_ICONS[i+1] + ' ' + w['商品名略称'] + '</div>' +
           '<div class="wine-official">' + w['正式商品名'] + '</div>' +
+          matchLabel(pct) +
           '<div class="score-bar-wrap">' +
-            '<span class="score-bar-label">Pairing Score</span>' +
             '<div class="score-bar-track"><div class="score-bar-fill" style="width:0%" data-pct="' + pct + '%"></div></div>' +
-            '<span class="score-bar-pct">' + pct + '%</span>' +
           '</div>' +
           '<div class="wine-tags">' +
             '<span class="tag ' + tagCls + '">' + cat + '</span>' +
             '<span class="tag tag-other">🌍 ' + (w['産地国'] || '') + (w['産地地域'] ? ' · ' + w['産地地域'] : '') + '</span>' +
             '<span class="tag tag-other">🍇 ' + (w['品種'] || '') + '</span>' +
-            '<span class="tag tag-other">' + (w['辛口甘口'] || '') + ' · ' + (w['ボディ'] || '') + 'ボディ</span>' +
+            '<span class="tag tag-other">' + (w['辛口甘口'] || '') + ' · ' + bodyLabel(w['ボディ'] || '') + '</span>' +
             note +
           '</div>' +
           '<div class="sommelier-comment">' +
@@ -1996,6 +2058,9 @@ function renderResults(dish, matched, scored, totalCount) {
             '<div class="pairing-why-title">' + c.why.icon + '  なぜこの料理に合うのか</div>' +
             c.why.why +
           '</div>' +
+          '<button class="btn-reverse" onclick="reverseSearchWine(\'' + w['商品名略称'].replace(/'/g,"&#39;") + '\')">' +
+            '🔄 このワインで他の料理も探す' +
+          '</button>' +
         '</div>' +
         '<div class="wine-price-col">' +
           '<div class="price-label">参考価格</div>' +
