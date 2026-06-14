@@ -389,6 +389,17 @@ input[type=range]::-webkit-slider-thumb {
 }
 .recent-chip:hover { border-color: #111; color: #111; }
 
+/* ── 行インデックス ── */
+.kana-row-btns { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+.kana-row-btn {
+  height: 28px; min-width: 44px; padding: 0 10px;
+  border: 1px solid #e8e8e8; background: #fff;
+  color: #767676; font-size: 12px; font-family: inherit;
+  cursor: pointer; transition: all 0.12s; font-weight: 600;
+}
+.kana-row-btn:hover { border-color: #111; color: #111; }
+.kana-row-btn.active { background: #111; color: #fff; border-color: #111; }
+
 /* ══ RESPONSIVE ══════════════════════════════════════ */
 @media (max-width: 600px) { .ranking-panel { grid-template-columns: 1fr; } }
 
@@ -524,8 +535,9 @@ input[type=range]::-webkit-slider-thumb {
         </button>
       </div>
       <div class="quick-wrap">
-        <div class="quick-label">ワインを選んで試す</div>
-        <div class="quick-dishes" id="wineQuickList"></div>
+        <div class="quick-label">ワインを選んで試す（247本）</div>
+        <div class="kana-row-btns" id="kanaRowBtns"></div>
+        <div class="quick-dishes" id="wineQuickList" style="margin-top:10px;max-height:180px;overflow-y:auto;"></div>
       </div>
     </div>
 
@@ -1852,36 +1864,82 @@ var dropdownIndex = -1;
 
 function initWineQuickList() {
   var picks = [];
-  var seen  = {};
-  var cats  = ['スパークリング','赤','白','ロゼ'];
-  cats.forEach(function(c) {
-    for (var i = 0; i < WINE_DATA.length; i++) {
-      var w = WINE_DATA[i];
-      var key = (w['色'] === c || w['カテゴリ'] === c);
-      if (key && !seen[w['商品名略称']]) {
-        seen[w['商品名略称']] = true;
-        picks.push(w);
-        break;
-      }
+  var KANA_ROWS = [
+    { label: 'ア行', chars: 'アイウエオァィゥェォ' },
+    { label: 'カ行', chars: 'カキクケコガギグゲゴ' },
+    { label: 'サ行', chars: 'サシスセソザジズゼゾ' },
+    { label: 'タ行', chars: 'タチツテトダヂヅデドッ' },
+    { label: 'ナ行', chars: 'ナニヌネノ' },
+    { label: 'ハ行', chars: 'ハヒフヘホバビブベボパピプペポ' },
+    { label: 'マ行', chars: 'マミムメモ' },
+    { label: 'ヤ行', chars: 'ヤユヨ' },
+    { label: 'ラ行', chars: 'ラリルレロ' },
+    { label: 'ワ行', chars: 'ワヲン' },
+  ];
+  var WINE_EMOJIS = { 'スパークリング':'🥂', '赤':'🍷', '白':'🥃', 'ロゼ':'🌸' };
+  var _activeKanaRow = null;
+
+  // 行ボタン生成
+  var btnHtml = '';
+  KANA_ROWS.forEach(function(row) {
+    // その行に該当するワインが存在するか確認
+    var exists = WINE_DATA.some(function(w) {
+      return row.chars.indexOf((w['商品名略称'] || '').charAt(0)) !== -1;
+    });
+    if (exists) {
+      btnHtml += '<button class="kana-row-btn" onclick="filterWinesByKana(\'' + row.label + '\')" id="kanaBtn_' + row.label + '">' + row.label + '</button>';
     }
   });
-  var emojis = { 'スパークリング':'🥂', '赤':'🍷', '白':'🥛', 'ロゼ':'🌸' };
-  var html = '';
-  picks.forEach(function(w) {
-    var cat = w['カテゴリ'] === 'スパークリング' ? 'スパークリング' : w['色'];
-    var em  = emojis[cat] || '🍾';
-    html += '<span class="quick-dish" onclick="quickWine(\'' + w['商品名略称'].replace(/'/g,"&#39;") + '\')">' + em + ' ' + w['商品名略称'] + '</span>';
-  });
-  // 人気ワインをいくつか追加
-  var extras = [];
+  document.getElementById('kanaRowBtns').innerHTML = btnHtml;
+  document.getElementById('wineQuickList').innerHTML = '<span style="font-size:12px;color:#bbb;">行を選ぶとワイン一覧が表示されます</span>';
+}
+
+function filterWinesByKana(rowLabel) {
+  var KANA_ROWS = [
+    { label: 'ア行', chars: 'アイウエオァィゥェォ' },
+    { label: 'カ行', chars: 'カキクケコガギグゲゴ' },
+    { label: 'サ行', chars: 'サシスセソザジズゼゾ' },
+    { label: 'タ行', chars: 'タチツテトダヂヅデドッ' },
+    { label: 'ナ行', chars: 'ナニヌネノ' },
+    { label: 'ハ行', chars: 'ハヒフヘホバビブベボパピプペポ' },
+    { label: 'マ行', chars: 'マミムメモ' },
+    { label: 'ヤ行', chars: 'ヤユヨ' },
+    { label: 'ラ行', chars: 'ラリルレロ' },
+    { label: 'ワ行', chars: 'ワヲン' },
+  ];
+  var WINE_EMOJIS = { 'スパークリング':'🥂', '赤':'🍷', '白':'🥃', 'ロゼ':'🌸' };
+
+  // ボタンのactive切替
+  document.querySelectorAll('.kana-row-btn').forEach(function(b) { b.classList.remove('active'); });
+  var activeBtn = document.getElementById('kanaBtn_' + rowLabel);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  var row = null;
+  for (var i = 0; i < KANA_ROWS.length; i++) {
+    if (KANA_ROWS[i].label === rowLabel) { row = KANA_ROWS[i]; break; }
+  }
+  if (!row) return;
+
+  var matched = [];
+  var seen = {};
   WINE_DATA.forEach(function(w) {
-    if (!seen[w['商品名略称']]) { extras.push(w); seen[w['商品名略称']] = true; }
+    var name = w['商品名略称'] || '';
+    if (row.chars.indexOf(name.charAt(0)) !== -1 && !seen[name]) {
+      seen[name] = true;
+      matched.push(w);
+    }
   });
-  extras.slice(0, 8).forEach(function(w) {
+  matched.sort(function(a,b) { return a['商品名略称'].localeCompare(b['商品名略称'], 'ja'); });
+
+  if (matched.length === 0) {
+    document.getElementById('wineQuickList').innerHTML = '<span style="font-size:12px;color:#bbb;">該当するワインがありません</span>';
+    return;
+  }
+  var html = matched.map(function(w) {
     var cat = w['カテゴリ'] === 'スパークリング' ? 'スパークリング' : w['色'];
-    var em  = { 'スパークリング':'🥂', '赤':'🍷', '白':'🥛', 'ロゼ':'🌸' }[cat] || '🍾';
-    html += '<span class="quick-dish" onclick="quickWine(\'' + w['商品名略称'].replace(/'/g,"&#39;") + '\')">' + em + ' ' + w['商品名略称'] + '</span>';
-  });
+    var em = WINE_EMOJIS[cat] || '🍾';
+    return '<span class="quick-dish" onclick="quickWine(\'' + w['商品名略称'].replace(/'/g,"&#39;") + '\')">' + em + ' ' + w['商品名略称'] + '</span>';
+  }).join('');
   document.getElementById('wineQuickList').innerHTML = html;
 }
 
