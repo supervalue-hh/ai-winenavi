@@ -3133,10 +3133,9 @@ function renderKanaCandidates() {
     var canonical = entry.keys[0];
     if (seen.indexOf(canonical) >= 0) return;
     if (isCoarse(canonical)) return;
-    var hit = entry.keys.some(function(key) {
-      var keyKa = hiToKatakana(key);
-      return key.indexOf(q) === 0 || keyKa.indexOf(qKa) === 0 || key.indexOf(qKa) === 0;
-    });
+    var name = canonical;
+    var nameKa = hiToKatakana(name);
+    var hit = name.indexOf(q) === 0 || nameKa.indexOf(qKa) === 0 || name.indexOf(qKa) === 0;
     if (hit) { matches.push(canonical); seen.push(canonical); }
   });
   if (matches.length === 0) {
