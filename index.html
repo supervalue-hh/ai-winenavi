@@ -244,8 +244,16 @@ body {
 }
 .kana-candidate:active, .kana-candidate:hover { background: #8B1A2C; color: #fff; }
 .kana-no-match { color: #bbb; font-size: 13px; padding: 4px 0; }
+.kana-text-input {
+  width: 100%; height: 46px; padding: 0 16px;
+  border: 2px solid #e8e8e8; background: #fff; color: #111;
+  font-size: 16px; font-family: inherit; outline: none;
+  transition: border-color 0.15s; margin-bottom: 10px;
+}
+.kana-text-input:focus { border-color: #8B1A2C; }
+.kana-text-input::placeholder { color: #bbb; font-size: 13px; }
 .kana-keyboard {
-  display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px;
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: 5px;
 }
 .kana-key {
   height: 46px; border: 1px solid #e8e8e8; border-radius: 6px;
@@ -604,24 +612,27 @@ input[type=range]::-webkit-slider-thumb {
       </div>
       <input type="hidden" id="dishInput" />
       <div class="kana-ui">
+        <input class="kana-text-input" id="kanaTextInput" type="text" placeholder="料理名を入力（例：ステーキ、鶏、パスタ…）" autocomplete="off" oninput="onKanaTextInput(this.value)" />
+        <div class="kana-candidates" id="kanaCandidates"></div>
         <div class="kana-display-row">
           <div class="kana-display placeholder" id="kanaDisplay">ひらがなでタッチしてください</div>
           <button class="kana-bs" onclick="kanaBackspace()">⌫</button>
           <button class="kana-clear" onclick="kanaClear()">クリア</button>
         </div>
-        <div class="kana-candidates" id="kanaCandidates"></div>
         <div class="kana-keyboard">
-          <button class="kana-key" onclick="kanaInput('あ')">あ</button><button class="kana-key" onclick="kanaInput('い')">い</button><button class="kana-key" onclick="kanaInput('う')">う</button><button class="kana-key" onclick="kanaInput('え')">え</button><button class="kana-key" onclick="kanaInput('お')">お</button>
-          <button class="kana-key" onclick="kanaInput('か')">か</button><button class="kana-key" onclick="kanaInput('き')">き</button><button class="kana-key" onclick="kanaInput('く')">く</button><button class="kana-key" onclick="kanaInput('け')">け</button><button class="kana-key" onclick="kanaInput('こ')">こ</button>
-          <button class="kana-key" onclick="kanaInput('さ')">さ</button><button class="kana-key" onclick="kanaInput('し')">し</button><button class="kana-key" onclick="kanaInput('す')">す</button><button class="kana-key" onclick="kanaInput('せ')">せ</button><button class="kana-key" onclick="kanaInput('そ')">そ</button>
-          <button class="kana-key" onclick="kanaInput('た')">た</button><button class="kana-key" onclick="kanaInput('ち')">ち</button><button class="kana-key" onclick="kanaInput('つ')">つ</button><button class="kana-key" onclick="kanaInput('て')">て</button><button class="kana-key" onclick="kanaInput('と')">と</button>
-          <button class="kana-key" onclick="kanaInput('な')">な</button><button class="kana-key" onclick="kanaInput('に')">に</button><button class="kana-key" onclick="kanaInput('ぬ')">ぬ</button><button class="kana-key" onclick="kanaInput('ね')">ね</button><button class="kana-key" onclick="kanaInput('の')">の</button>
-          <button class="kana-key" onclick="kanaInput('は')">は</button><button class="kana-key" onclick="kanaInput('ひ')">ひ</button><button class="kana-key" onclick="kanaInput('ふ')">ふ</button><button class="kana-key" onclick="kanaInput('へ')">へ</button><button class="kana-key" onclick="kanaInput('ほ')">ほ</button>
-          <button class="kana-key" onclick="kanaInput('ま')">ま</button><button class="kana-key" onclick="kanaInput('み')">み</button><button class="kana-key" onclick="kanaInput('む')">む</button><button class="kana-key" onclick="kanaInput('め')">め</button><button class="kana-key" onclick="kanaInput('も')">も</button>
-          <button class="kana-key" onclick="kanaInput('や')">や</button><button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('ゆ')">ゆ</button><button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('よ')">よ</button>
-          <button class="kana-key" onclick="kanaInput('ら')">ら</button><button class="kana-key" onclick="kanaInput('り')">り</button><button class="kana-key" onclick="kanaInput('る')">る</button><button class="kana-key" onclick="kanaInput('れ')">れ</button><button class="kana-key" onclick="kanaInput('ろ')">ろ</button>
-          <button class="kana-key" onclick="kanaInput('わ')">わ</button><button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('を')">を</button><button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('ん')">ん</button>
-          <button class="kana-key modifier" onclick="kanaInput('ー')">ー</button><button class="kana-key modifier" onclick="addDakuten()">゛</button><button class="kana-key modifier" onclick="addHandakuten()">゜</button><button class="kana-key spacer"></button><button class="kana-key spacer"></button>
+          <!-- 縦書き右→左：わ行 ら行 や行 ま行 は行 な行 た行 さ行 か行 あ行 -->
+          <!-- あ段 -->
+          <button class="kana-key" onclick="kanaInput('わ')">わ</button><button class="kana-key" onclick="kanaInput('ら')">ら</button><button class="kana-key" onclick="kanaInput('や')">や</button><button class="kana-key" onclick="kanaInput('ま')">ま</button><button class="kana-key" onclick="kanaInput('は')">は</button><button class="kana-key" onclick="kanaInput('な')">な</button><button class="kana-key" onclick="kanaInput('た')">た</button><button class="kana-key" onclick="kanaInput('さ')">さ</button><button class="kana-key" onclick="kanaInput('か')">か</button><button class="kana-key" onclick="kanaInput('あ')">あ</button>
+          <!-- い段 -->
+          <button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('り')">り</button><button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('み')">み</button><button class="kana-key" onclick="kanaInput('ひ')">ひ</button><button class="kana-key" onclick="kanaInput('に')">に</button><button class="kana-key" onclick="kanaInput('ち')">ち</button><button class="kana-key" onclick="kanaInput('し')">し</button><button class="kana-key" onclick="kanaInput('き')">き</button><button class="kana-key" onclick="kanaInput('い')">い</button>
+          <!-- う段 -->
+          <button class="kana-key" onclick="kanaInput('を')">を</button><button class="kana-key" onclick="kanaInput('る')">る</button><button class="kana-key" onclick="kanaInput('ゆ')">ゆ</button><button class="kana-key" onclick="kanaInput('む')">む</button><button class="kana-key" onclick="kanaInput('ふ')">ふ</button><button class="kana-key" onclick="kanaInput('ぬ')">ぬ</button><button class="kana-key" onclick="kanaInput('つ')">つ</button><button class="kana-key" onclick="kanaInput('す')">す</button><button class="kana-key" onclick="kanaInput('く')">く</button><button class="kana-key" onclick="kanaInput('う')">う</button>
+          <!-- え段 -->
+          <button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('れ')">れ</button><button class="kana-key spacer"></button><button class="kana-key" onclick="kanaInput('め')">め</button><button class="kana-key" onclick="kanaInput('へ')">へ</button><button class="kana-key" onclick="kanaInput('ね')">ね</button><button class="kana-key" onclick="kanaInput('て')">て</button><button class="kana-key" onclick="kanaInput('せ')">せ</button><button class="kana-key" onclick="kanaInput('け')">け</button><button class="kana-key" onclick="kanaInput('え')">え</button>
+          <!-- お段 -->
+          <button class="kana-key" onclick="kanaInput('ん')">ん</button><button class="kana-key" onclick="kanaInput('ろ')">ろ</button><button class="kana-key" onclick="kanaInput('よ')">よ</button><button class="kana-key" onclick="kanaInput('も')">も</button><button class="kana-key" onclick="kanaInput('ほ')">ほ</button><button class="kana-key" onclick="kanaInput('の')">の</button><button class="kana-key" onclick="kanaInput('と')">と</button><button class="kana-key" onclick="kanaInput('そ')">そ</button><button class="kana-key" onclick="kanaInput('こ')">こ</button><button class="kana-key" onclick="kanaInput('お')">お</button>
+          <!-- 修飾 -->
+          <button class="kana-key modifier" onclick="kanaInput('ー')">ー</button><button class="kana-key modifier" onclick="addDakuten()">゛</button><button class="kana-key modifier" onclick="addHandakuten()">゜</button><button class="kana-key spacer"></button><button class="kana-key spacer"></button><button class="kana-key spacer"></button><button class="kana-key spacer"></button><button class="kana-key spacer"></button><button class="kana-key spacer"></button><button class="kana-key spacer"></button>
         </div>
       </div>
       <div class="search-row">
@@ -3047,8 +3058,20 @@ function hiToKatakana(str) {
   }).join('');
 }
 
+function syncTextInput() {
+  var el = document.getElementById('kanaTextInput');
+  if (el) el.value = _dishQuery;
+}
+
+function onKanaTextInput(val) {
+  _dishQuery = val;
+  renderKanaDisplay();
+  renderKanaCandidates();
+}
+
 function kanaInput(char) {
   _dishQuery += char;
+  syncTextInput();
   renderKanaDisplay();
   renderKanaCandidates();
 }
@@ -3056,6 +3079,7 @@ function kanaInput(char) {
 function kanaBackspace() {
   if (_dishQuery.length > 0) {
     _dishQuery = _dishQuery.slice(0, -1);
+    syncTextInput();
     renderKanaDisplay();
     renderKanaCandidates();
   }
@@ -3063,6 +3087,7 @@ function kanaBackspace() {
 
 function kanaClear() {
   _dishQuery = '';
+  syncTextInput();
   renderKanaDisplay();
   renderKanaCandidates();
 }
