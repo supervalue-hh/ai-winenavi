@@ -413,6 +413,13 @@ select:focus { border-color: #111; }
 }
 .step-text { font-size: 14px; color: #333; line-height: 1.75; }
 .footer-space { height: 80px; }
+.voice-settings-btn { background: none; border: 1px solid var(--bord); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.voice-settings-btn:hover { background: #f5f5f5; }
+.voice-settings-panel { background: #fafafa; border: 1px solid var(--bord); border-radius: 12px; padding: 16px; margin-top: 10px; display: none; }
+.voice-settings-panel.open { display: block; }
+.voice-settings-panel label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; margin-top: 12px; }
+.voice-settings-panel label:first-child { margin-top: 0; }
+.voice-settings-panel select { width: 100%; padding: 7px 10px; border: 1px solid var(--bord); border-radius: 8px; font-size: 13px; background: #fff; }
 
 /* ── もっと見るボタン ── */
 .load-more-wrap { text-align: center; margin: 16px 0 32px; }
@@ -2588,31 +2595,37 @@ function startVoiceInput(targetId, btn) {
   }
 }
 
-// ─── 音声読み上げ ────────────────────────────────────────────────
+// ─── 音声読み上げ（ElevenLabs） ──────────────────────────────────
 var _voiceMuted = false;
+var _EL_WORKER  = 'https://super-river-d169.hithithit1114.workers.dev';
+var _EL_VOICE   = 'lfS4FNq2QJ0xr8H1zM7s';
+var _currentAudio = null;
 
 function toggleVoice() {
   try {
     _voiceMuted = !_voiceMuted;
     var btn = document.getElementById('voiceToggleBtn');
     if (btn) btn.textContent = _voiceMuted ? '🔇 音声OFF' : '🔊 音声ON';
-    if (_voiceMuted && window.speechSynthesis) window.speechSynthesis.cancel();
+    if (_voiceMuted && _currentAudio) { _currentAudio.pause(); _currentAudio = null; }
   } catch(e) {}
 }
 
 function speakText(text) {
   try {
-    if (_voiceMuted || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    var utter = new SpeechSynthesisUtterance(text);
-    utter.lang = 'ja-JP';
-    utter.rate = 0.92;
-    utter.pitch = 1.0;
-    var voices = window.speechSynthesis.getVoices();
-    var jaVoice = voices.find(function(v) { return v.lang === 'ja-JP' && v.localService; })
-               || voices.find(function(v) { return v.lang === 'ja-JP'; });
-    if (jaVoice) utter.voice = jaVoice;
-    window.speechSynthesis.speak(utter);
+    if (_voiceMuted) return;
+    if (_currentAudio) { _currentAudio.pause(); _currentAudio = null; }
+    fetch(_EL_WORKER, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: text, voice_id: _EL_VOICE })
+    })
+    .then(function(res) { return res.blob(); })
+    .then(function(blob) {
+      var url = URL.createObjectURL(blob);
+      _currentAudio = new Audio(url);
+      _currentAudio.play();
+    })
+    .catch(function(e) { console.warn('TTS error:', e); });
   } catch(e) {}
 }
 
@@ -2642,17 +2655,7 @@ function speakResultComment(dish, scored) {
       dish + 'のお供に、' + wineName + 'はいかがでしょうか。',
     ];
     var text = phrases[Math.floor(Math.random() * phrases.length)];
-    var voices = window.speechSynthesis.getVoices();
-    if (voices.length === 0) {
-      window.speechSynthesis.addEventListener('voiceschanged', function onV() {
-        try {
-          window.speechSynthesis.removeEventListener('voiceschanged', onV);
-          speakText(text);
-        } catch(e) {}
-      });
-    } else {
-      speakText(text);
-    }
+    speakText(text);
   } catch(e) {}
 }
 
@@ -2695,15 +2698,10 @@ function renderResults(dish, matched, scored, totalCount) {
     var _tf2 = document.getElementById('drinkTypeFilter').value;
     if (_tf2 === 'sake') {
       try {
-        if (!_voiceMuted && window.speechSynthesis && scored[0]) {
+        if (!_voiceMuted && scored[0]) {
           var _sakeName = scored[0].wine['商品名略称'] || '';
           var _sakePhrase = dish + 'でしたら、日本酒の' + _sakeName + 'がよく合いますよ。';
-          var _vs = window.speechSynthesis.getVoices();
-          if (_vs.length === 0) {
-            window.speechSynthesis.addEventListener('voiceschanged', function onVS() {
-              try { window.speechSynthesis.removeEventListener('voiceschanged', onVS); speakText(_sakePhrase); } catch(e) {}
-            });
-          } else { speakText(_sakePhrase); }
+          speakText(_sakePhrase);
         }
       } catch(e) {}
     } else {
@@ -3190,14 +3188,7 @@ function renderWineReverseResults(wine, dishes) {
           wineName + 'のおともに、' + dishName + 'はいかがでしょうか。',
         ];
         var text = phrases[Math.floor(Math.random() * phrases.length)];
-        var voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-        if (voices.length === 0 && window.speechSynthesis) {
-          window.speechSynthesis.addEventListener('voiceschanged', function onV() {
-            try { window.speechSynthesis.removeEventListener('voiceschanged', onV); speakText(text); } catch(e) {}
-          });
-        } else {
-          speakText(text);
-        }
+        speakText(text);
       }
     } catch(e) {}
   }
@@ -3620,17 +3611,11 @@ function renderSakeReverseResults(sake, dishes) {
   // TTS
   if (dishes.length > 0) {
     try {
-      if (!_voiceMuted && window.speechSynthesis) {
+      if (!_voiceMuted) {
         var _sn = sake['商品名略称'] || '';
         var _dn = dishes[0].keys[0] || '';
         if (_sn && _dn) {
-          var _sp = _sn + 'には、' + _dn + 'がよく合いますよ。';
-          var _vs = window.speechSynthesis.getVoices();
-          if (_vs.length === 0) {
-            window.speechSynthesis.addEventListener('voiceschanged', function onVR() {
-              try { window.speechSynthesis.removeEventListener('voiceschanged', onVR); speakText(_sp); } catch(e) {}
-            });
-          } else { speakText(_sp); }
+          speakText(_sn + 'には、' + _dn + 'がよく合いますよ。');
         }
       }
     } catch(e) {}
