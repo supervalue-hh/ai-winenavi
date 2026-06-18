@@ -2279,6 +2279,88 @@ function scoreWines(dish, matched) {
         }
         // 元のキーワードに料理名が含まれる場合はボーナス
         if (kw.indexOf(dish) !== -1) score += 10;
+
+        // ── 産地・辛甘による個別ボーナス ──────────────────────
+        if (matched) {
+          var region   = d['産地地域'] || '';
+          var karakuchi = d['辛甘'] || '';
+          var dtags2   = matched.tags;
+          var has2     = function(t) { return dtags2.indexOf(t) >= 0; };
+
+          // 新潟（淡麗辛口）: 繊細な魚料理・あっさり系に強い
+          if (region === '新潟') {
+            if (has2('魚料理')) score += 8;
+            if (has2('前菜'))   score += 5;
+            if (has2('和食'))   score += 4;
+            if (has2('肉料理') && !has2('和食')) score -= 2;
+          }
+          // 兵庫（灘の男酒・濃醇辛口）: 肉料理・こってり系に強い
+          if (region === '兵庫') {
+            if (has2('肉料理') || has2('揚げ物'))  score += 8;
+            if (has2('魚料理'))                     score += 4;
+            if (has2('煮込み'))                     score += 5;
+          }
+          // 京都（伏見の女酒・軟水甘口）: 繊細・野菜・和食に強い
+          if (region === '京都') {
+            if (has2('野菜料理') || has2('前菜'))   score += 7;
+            if (has2('魚料理'))                     score += 5;
+            if (has2('和食'))                       score += 4;
+            if (has2('肉料理') && has2('グリル'))   score -= 3;
+          }
+          // 石川（山廃・能登の旨み系）: 魚介・鍋・旨み料理に強い
+          if (region === '石川') {
+            if (has2('魚料理'))  score += 9;
+            if (has2('煮込み'))  score += 8;
+            if (has2('肉料理'))  score += 5;
+          }
+          // 広島（軟水・繊細）: 魚介・牡蠣に圧倒的に強い
+          if (region === '広島') {
+            if (has2('魚料理'))  score += 10;
+            if (has2('前菜'))    score += 6;
+          }
+          // 秋田（芳醇・やや甘口系）: 煮物・和食・鍋に強い
+          if (region === '秋田') {
+            if (has2('煮込み') || has2('和食')) score += 7;
+            if (has2('鶏料理'))                 score += 5;
+          }
+          // 宮城・岩手（東北淡麗）: 魚・和食全般
+          if (region === '宮城' || region === '岩手') {
+            if (has2('魚料理')) score += 7;
+            if (has2('和食'))   score += 5;
+          }
+          // 高知（超辛口）: 脂っこい料理を流す力
+          if (region === '高知') {
+            if (has2('肉料理') || has2('揚げ物') || has2('魚料理')) score += 6;
+          }
+          // 山形（フルーティー系）: 幅広く対応
+          if (region === '山形') {
+            if (has2('魚料理') || has2('鶏料理') || has2('前菜')) score += 6;
+          }
+          // 東京（辛口）: 江戸前料理・魚
+          if (region === '東京') {
+            if (has2('魚料理') || has2('和食')) score += 6;
+          }
+          // 北海道（寒冷地・旨み系）: 肉・鍋系
+          if (region === '北海道') {
+            if (has2('肉料理') || has2('煮込み')) score += 7;
+          }
+
+          // 辛甘による料理強度マッチング
+          if (karakuchi === '辛口') {
+            if (has2('揚げ物') || has2('肉料理') || has2('グリル')) score += 5;
+          }
+          if (karakuchi === 'やや辛口') {
+            if (has2('魚料理') || has2('前菜') || has2('鶏料理')) score += 4;
+          }
+          if (karakuchi === 'やや甘口') {
+            if (has2('スイーツ') || has2('和菓子')) score += 8;
+            if (has2('肉料理') && has2('グリル'))   score -= 4;
+          }
+          if (karakuchi === '普通') {
+            // 万能タイプ：極端な加点減点なし、和食全般に小ボーナス
+            if (has2('和食')) score += 3;
+          }
+        }
       }
 
       if (matched) {
