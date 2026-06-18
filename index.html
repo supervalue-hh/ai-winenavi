@@ -502,7 +502,7 @@ input[type=range]::-webkit-slider-thumb {
   .header { padding: 0 16px; }
   .main { padding: 20px 16px 80px; }
   .hero-left { padding: 20px 0 16px; }
-  .hero-right { display: none; }
+  .hero-right img { width: 120px; height: 150px; }
   .hero-heading { font-size: 28px; }
   .hero-stats { gap: 16px; flex-wrap: wrap; }
   .hero-stat-num { font-size: 20px; }
@@ -2689,7 +2689,25 @@ function renderResults(dish, matched, scored, totalCount) {
   }
 
   // 最初のページ表示時のみ読み上げ（loadMoreでは再度読まない）
-  if (scored.length <= 3) speakResultComment(dish, scored);
+  if (scored.length <= 3) {
+    var _tf2 = document.getElementById('drinkTypeFilter').value;
+    if (_tf2 === 'sake') {
+      try {
+        if (!_voiceMuted && window.speechSynthesis && scored[0]) {
+          var _sakeName = scored[0].wine['商品名略称'] || '';
+          var _sakePhrase = dish + 'でしたら、日本酒の' + _sakeName + 'がよく合いますよ。';
+          var _vs = window.speechSynthesis.getVoices();
+          if (_vs.length === 0) {
+            window.speechSynthesis.addEventListener('voiceschanged', function onVS() {
+              try { window.speechSynthesis.removeEventListener('voiceschanged', onVS); speakText(_sakePhrase); } catch(e) {}
+            });
+          } else { speakText(_sakePhrase); }
+        }
+      } catch(e) {}
+    } else {
+      speakResultComment(dish, scored);
+    }
+  }
 
   var typeFilter = document.getElementById('drinkTypeFilter').value;
   var drinkLabel = typeFilter === 'sake' ? '日本酒' : typeFilter === 'shochu' ? '焼酎' : typeFilter === 'wine' ? 'ワイン' : 'お酒';
@@ -3596,6 +3614,25 @@ function renderSakeReverseResults(sake, dishes) {
   html += '</div>';
   cardsEl.innerHTML = html;
   recipeEl.innerHTML = '';
+
+  // TTS
+  if (dishes.length > 0) {
+    try {
+      if (!_voiceMuted && window.speechSynthesis) {
+        var _sn = sake['商品名略称'] || '';
+        var _dn = dishes[0].keys[0] || '';
+        if (_sn && _dn) {
+          var _sp = _sn + 'には、' + _dn + 'がよく合いますよ。';
+          var _vs = window.speechSynthesis.getVoices();
+          if (_vs.length === 0) {
+            window.speechSynthesis.addEventListener('voiceschanged', function onVR() {
+              try { window.speechSynthesis.removeEventListener('voiceschanged', onVR); speakText(_sp); } catch(e) {}
+            });
+          } else { speakText(_sp); }
+        }
+      }
+    } catch(e) {}
+  }
 
   void resultsEl.offsetWidth;
   resultsEl.classList.add('visible');
