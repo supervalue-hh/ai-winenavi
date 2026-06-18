@@ -65,8 +65,11 @@ body {
   max-width: 720px; margin: 0 auto;
   padding: 0 24px;
   border-bottom: 1px solid #e8e8e8;
+  display: flex; align-items: flex-end; gap: 24px;
 }
-.hero-left { padding: 24px 0 20px; }
+.hero-left { padding: 24px 0 20px; flex: 1; }
+.hero-right { flex-shrink: 0; padding-top: 16px; }
+.hero-right img { width: 200px; height: 240px; object-fit: cover; object-position: top center; display: block; border-radius: 8px 8px 0 0; transition: opacity 0.4s; }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
@@ -499,6 +502,7 @@ input[type=range]::-webkit-slider-thumb {
   .header { padding: 0 16px; }
   .main { padding: 20px 16px 80px; }
   .hero-left { padding: 20px 0 16px; }
+  .hero-right { display: none; }
   .hero-heading { font-size: 28px; }
   .hero-stats { gap: 16px; flex-wrap: wrap; }
   .hero-stat-num { font-size: 20px; }
@@ -546,7 +550,7 @@ input[type=range]::-webkit-slider-thumb {
       AI PAIRING NAVI
     </div>
     <h1 class="hero-heading">今夜の食卓に、<br><em>ぴったりの一本</em>を。</h1>
-    <p class="hero-sub">料理名を入力するだけで、最適な一本を厳選してご提案します。なぜ合うのかもわかりやすく解説。</p>
+    <p class="hero-sub">料理名を入れるだけで、ぴったりのワインや日本酒をご提案。なぜ合うのかの理由もわかりやすくご説明します。</p>
     <div class="hero-stats">
       <div>
         <div class="hero-stat-num">🍷 247</div>
@@ -563,6 +567,9 @@ input[type=range]::-webkit-slider-thumb {
         <div class="hero-stat-label">対応料理数</div>
       </div>
     </div>
+  </div>
+  <div class="hero-right">
+    <img id="sommelierImg" src="hayakawa.png" alt="早川さん" />
   </div>
 
 </section>
