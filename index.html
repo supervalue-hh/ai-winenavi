@@ -2211,23 +2211,74 @@ function scoreWines(dish, matched) {
         if (col === 'ロゼ') kwExpanded += ' 肉料理 魚料理';
         if (cat === 'スパークリング') kwExpanded += ' 前菜 チーズ';
       }
-      // 日本酒：種別ごとのタグ補完（ペアリング適性に応じて対応タグを追加）
+      // 日本酒：種別ごとのタグ補完 + 料理特性に応じた種別ボーナスで差別化
       if (d._type === 'sake') {
         var stype = d['種別'] || '';
-        if (stype === '純米大吟醸' || stype === '大吟醸') {
-          kwExpanded += ' 魚料理 和食 前菜';
-          // 繊細な料理向けなので洋食は除外して差別化
-        } else if (stype === '純米吟醸' || stype === '吟醸') {
-          kwExpanded += ' 魚料理 和食 鶏料理 前菜 肉料理 エスニック';
-        } else if (stype === '特別純米' || stype === '純米') {
-          kwExpanded += ' 魚料理 和食 鶏料理 肉料理 煮込み 前菜 野菜料理 揚げ物';
-        } else if (stype === '特別本醸造' || stype === '本醸造') {
-          kwExpanded += ' 魚料理 和食 鶏料理 肉料理 揚げ物 前菜 煮込み';
-        } else {
-          kwExpanded += ' 魚料理 和食 鶏料理 肉料理 煮込み 揚げ物 前菜';
+        // 全種別に基本タグを付与
+        kwExpanded += ' 魚料理 和食 鶏料理 肉料理 煮込み 揚げ物 前菜 野菜料理';
+
+        // 料理タグ×種別の適性ボーナス（これで差別化する）
+        if (matched) {
+          var dtags = matched.tags;
+          var hasTag = function(t) { return dtags.indexOf(t) >= 0; };
+
+          // 魚・刺身系 → 大吟醸・純米大吟醸が最適
+          if (hasTag('魚料理')) {
+            if (stype === '純米大吟醸') score += 20;
+            else if (stype === '大吟醸') score += 18;
+            else if (stype === '純米吟醸' || stype === '吟醸') score += 10;
+            else if (stype === '特別純米' || stype === '純米') score += 5;
+          }
+          // 肉料理・グリル → 純米・本醸造が適
+          if (hasTag('肉料理') || hasTag('ステーキ') || hasTag('グリル')) {
+            if (stype === '純米' || stype === '特別純米') score += 18;
+            else if (stype === '本醸造' || stype === '特別本醸造') score += 14;
+            else if (stype === '純米吟醸' || stype === '吟醸') score += 8;
+            else if (stype === '純米大吟醸' || stype === '大吟醸') score += 2;
+          }
+          // 揚げ物 → 本醸造・辛口
+          if (hasTag('揚げ物')) {
+            if (stype === '本醸造' || stype === '特別本醸造') score += 18;
+            else if (stype === '純米' || stype === '特別純米') score += 12;
+            else if (stype === '純米吟醸') score += 6;
+          }
+          // 煮物・煮込み → 純米・本醸造
+          if (hasTag('煮込み')) {
+            if (stype === '純米' || stype === '特別純米') score += 15;
+            else if (stype === '本醸造' || stype === '特別本醸造') score += 12;
+            else if (stype === '純米吟醸') score += 6;
+          }
+          // 前菜・繊細な料理 → 純米吟醸・大吟醸
+          if (hasTag('前菜')) {
+            if (stype === '純米大吟醸') score += 12;
+            else if (stype === '大吟醸') score += 10;
+            else if (stype === '純米吟醸' || stype === '吟醸') score += 8;
+          }
+          // 鶏料理 → 純米吟醸・純米
+          if (hasTag('鶏料理')) {
+            if (stype === '純米吟醸' || stype === '吟醸') score += 14;
+            else if (stype === '純米' || stype === '特別純米') score += 12;
+            else if (stype === '本醸造') score += 8;
+          }
+          // エスニック・洋食 → 純米吟醸
+          if (hasTag('エスニック') || hasTag('パスタ') || hasTag('洋食')) {
+            if (stype === '純米吟醸' || stype === '吟醸') score += 14;
+            else if (stype === '大吟醸' || stype === '純米大吟醸') score += 10;
+            else if (stype === '純米') score += 6;
+          }
+          // デザート・スイーツ → にごり酒
+          if (hasTag('スイーツ') || hasTag('デザート類') || hasTag('和菓子')) {
+            if (stype === 'にごり酒') score += 30;
+            else score -= 5;
+          }
+          // 焼肉 → 純米・本醸造
+          if (hasTag('焼肉')) {
+            if (stype === '純米' || stype === '特別純米') score += 16;
+            else if (stype === '本醸造' || stype === '特別本醸造') score += 12;
+          }
         }
-        // オリジナルキーワード（刺身・天ぷら等の具体的料理名）が dish に含まれればボーナス
-        if (kw.indexOf(dish) !== -1) score += 8;
+        // 元のキーワードに料理名が含まれる場合はボーナス
+        if (kw.indexOf(dish) !== -1) score += 10;
       }
 
       if (matched) {
