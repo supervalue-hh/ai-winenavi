@@ -2597,9 +2597,14 @@ function startVoiceInput(targetId, btn) {
 }
 
 // ─── 音声読み上げ（ElevenLabs） ──────────────────────────────────
+// 【音声の切り替え方法】下の _EL_VOICE に使いたいVoice IDを入れるだけ
+var _VOICE_HAMANO   = 'lfS4FNq2QJ0xr8H1zM7s';  // 浜野さんの声
+var _VOICE_HAYAKAWA = '';                       // 早川さんの声（録音後にVoice IDを入れる）
+var _VOICE_PRESET   = '';                       // 日本語プリセット音声（ライブラリ追加後にVoice IDを入れる）
+
 var _voiceMuted = false;
 var _EL_WORKER  = 'https://super-river-d169.hithithit1114.workers.dev';
-var _EL_VOICE   = 'lfS4FNq2QJ0xr8H1zM7s';
+var _EL_VOICE   = _VOICE_HAMANO;   // ← ここを _VOICE_HAYAKAWA 等に変えれば声が切り替わります
 var _ttsAudio   = null;
 var _audioUnlocked = false;
 
