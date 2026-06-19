@@ -3454,9 +3454,13 @@ function renderKanaCandidates() {
     var canonical = entry.keys[0];
     if (seen.indexOf(canonical) >= 0) return;
     if (isCoarse(canonical)) return;
-    var name = canonical;
-    var nameKa = hiToKatakana(name);
-    var hit = name.indexOf(q) === 0 || nameKa.indexOf(qKa) === 0 || name.indexOf(qKa) === 0;
+    // 全キー（漢字・ひらがな読みなど）で前方一致を判定
+    var hit = false;
+    for (var ki = 0; ki < entry.keys.length; ki++) {
+      var k = entry.keys[ki];
+      var kKa = hiToKatakana(k);
+      if (k.indexOf(q) === 0 || kKa.indexOf(qKa) === 0 || k.indexOf(qKa) === 0) { hit = true; break; }
+    }
     if (hit) { matches.push(canonical); seen.push(canonical); }
   });
   if (matches.length === 0) {
