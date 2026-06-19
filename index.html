@@ -814,6 +814,7 @@ var DISH_DICT = [
   { keys: ['オムライス','オムレツ'], tags: ['洋食','卵料理'], color: null, body: 'ライト', reason: '卵のまろやかさに辛口白やロゼが合います' },
   { keys: ['ロールキャベツ'], tags: ['洋食','肉料理','煮込み'], color: null, body: 'ミディアム', reason: 'トマト煮込みに軽めの赤が合います' },
   { keys: ['サーモンステーキ','魚のグリル','グリルフィッシュ'], tags: ['魚料理'], color: null, body: 'ミディアム', reason: 'グリル魚にピノノワールか辛口白が合います' },
+  { keys: ['アトランティックサーモン','アトランティックサーモンのソテー','大西洋サーモン'], tags: ['魚料理'], color: null, body: 'ミディアム', reason: '脂のりの良いアトランティックサーモンには、ピノノワールやコクのある辛口白がよく合います' },
   { keys: ['ナチョス','タコス','ブリトー','ファジータ','メキシカン'], tags: ['エスニック','アメリカ料理'], color: null, body: 'ライト', reason: 'スパイシーなメキシカンにロゼやフルーティー赤が合います' },
   { keys: ['北京ダック', 'ぺきんだっく', 'ペキンダック'], tags: ['エスニック','肉料理'], color: null, body: 'ミディアム', reason: '皮のパリパリ感に軽い赤やロゼが合います' },
   { keys: ['チャーハン','炒飯'], tags: ['エスニック'], color: null, body: 'ライト', reason: '香ばしい炒飯にフルーティーな赤やロゼが合います' },
@@ -2133,16 +2134,27 @@ function showInputError(msg) {
 function matchDish(dish) {
   var d = dish.replace(/[\s　]/g, '');
 
-  // パス1: 完全包含マッチ（既存キーが入力に含まれる、または逆）
+  // パス0: 完全一致（最優先）
+  for (var i = 0; i < DISH_DICT.length; i++) {
+    var entry = DISH_DICT[i];
+    for (var j = 0; j < entry.keys.length; j++) {
+      if (entry.keys[j] === d) return entry;
+    }
+  }
+
+  // パス1: 包含マッチ。最も具体的（一致キーが長い）エントリを優先
+  var best = null, bestLen = 0;
   for (var i = 0; i < DISH_DICT.length; i++) {
     var entry = DISH_DICT[i];
     for (var j = 0; j < entry.keys.length; j++) {
       var key = entry.keys[j];
       if (d.indexOf(key) !== -1 || key.indexOf(d) !== -1) {
-        return entry;
+        var matchLen = Math.min(key.length, d.length);
+        if (matchLen > bestLen) { bestLen = matchLen; best = entry; }
       }
     }
   }
+  if (best) return best;
 
   // パス2: 3文字以上の任意部分文字列マッチ（入力の部分列がキーに含まれる）
   for (var i = 0; i < DISH_DICT.length; i++) {
