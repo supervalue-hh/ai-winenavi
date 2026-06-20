@@ -2776,20 +2776,13 @@ function doSpeak(text) {
 
 function speakText(text) {
   try {
-    if (_voiceMuted || !window.speechSynthesis) return;
-    window.speechSynthesis.cancel();
-    if (!_bestVoice && window.speechSynthesis.getVoices().length === 0) {
-      var spoke = false;
-      var fire = function() {
-        if (spoke) return; spoke = true;
-        preloadVoices();
-        doSpeak(text);
-      };
-      window.speechSynthesis.addEventListener('voiceschanged', fire, { once: true });
-      setTimeout(fire, 250);
-      return;
-    }
-    doSpeak(text);
+    if (_voiceMuted) return;
+    if (!_ttsAudio) _ttsAudio = new Audio();
+    // GET方式：ElevenLabsの声（_EL_VOICE）をAudioタグに直接指定（スマホ対応）
+    var fixed = applyReadingFix(text);
+    var url = _EL_WORKER + '/?text=' + encodeURIComponent(fixed) + '&voice_id=' + encodeURIComponent(_EL_VOICE);
+    _ttsAudio.src = url;
+    _ttsAudio.play().catch(function(e) { console.warn('play error:', e); });
   } catch(e) {}
 }
 
