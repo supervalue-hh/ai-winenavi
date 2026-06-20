@@ -246,6 +246,7 @@ body {
 }
 .kana-candidate:active, .kana-candidate:hover { background: #E6001A; color: #fff; }
 .kana-no-match { color: #bbb; font-size: 13px; padding: 4px 0; }
+.kana-more { width: 100%; flex-basis: 100%; color: #999; font-size: 12px; padding: 2px 2px 0; }
 .kana-text-input {
   width: 100%; height: 46px; padding: 0 16px;
   border: 2px solid #e8e8e8; background: #fff; color: #111;
@@ -3512,9 +3513,15 @@ function renderKanaCandidates() {
     el.innerHTML = '<span class="kana-no-match">候補が見つかりません</span>';
     return;
   }
-  el.innerHTML = matches.map(function(name) {
+  var total = matches.length;
+  var shown = matches.slice(0, 10);
+  var html = shown.map(function(name) {
     return '<button class="kana-candidate" onclick="quickDish(\'' + name.replace(/'/g, "\\'") + '\')">' + name + '</button>';
   }).join('');
+  if (total > 10) {
+    html += '<span class="kana-more">ほか' + (total - 10) + '件 — 文字を追加すると絞り込めます</span>';
+  }
+  el.innerHTML = html;
 }
 
 // ─── DOMContentLoaded ─────────────────────────────────────────
