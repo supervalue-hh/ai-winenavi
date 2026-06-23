@@ -69,7 +69,7 @@ body {
 }
 .hero-left { padding: 24px 0 20px; flex: 1; }
 .hero-right { flex-shrink: 0; padding-top: 16px; }
-.hero-right img { width: 200px; height: 240px; object-fit: cover; object-position: top center; display: block; border-radius: 8px 8px 0 0; transition: opacity 0.4s; }
+.hero-right img { width: 280px; height: 340px; object-fit: cover; object-position: top center; display: block; border-radius: 8px 8px 0 0; transition: opacity 0.15s; }
 .hero-eyebrow {
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 10px; font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
@@ -510,7 +510,7 @@ input[type=range]::-webkit-slider-thumb {
   .header { padding: 0 16px; }
   .main { padding: 20px 16px 80px; }
   .hero-left { padding: 20px 0 16px; }
-  .hero-right img { width: 120px; height: 150px; }
+  .hero-right img { width: 150px; height: 185px; }
   .hero-heading { font-size: 28px; }
   .hero-stats { gap: 16px; flex-wrap: wrap; }
   .hero-stat-num { font-size: 20px; }
@@ -571,7 +571,7 @@ input[type=range]::-webkit-slider-thumb {
       </div>
       <div style="width:1px;background:var(--bord);margin:4px 0;"></div>
       <div>
-        <div class="hero-stat-num">746</div>
+        <div class="hero-stat-num" id="dishCountNum">746</div>
         <div class="hero-stat-label">対応料理数</div>
       </div>
     </div>
@@ -2750,13 +2750,20 @@ function speakResultComment(dish, scored) {
   } catch(e) {}
 }
 
+// 画像を事前ロードして切り替えを即時に
+var _imgPreload = (function() {
+  var a = new Image(); a.src = 'hayakawa.png';
+  var b = new Image(); b.src = 'hayakawa-sake.png';
+  return [a, b];
+})();
 function setSommelierImg(mode) {
   var img = document.getElementById('sommelierImg');
   if (!img) return;
   var isSake = mode === 'sake' || mode === 'sake-result';
   var src = isSake ? 'hayakawa-sake.png' : 'hayakawa.png';
+  if (img.getAttribute('src') === src) return;  // 同じ画像なら何もしない
   img.style.opacity = '0';
-  setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 300);
+  setTimeout(function() { img.src = src; img.style.opacity = '1'; }, 100);
 }
 
 function renderResults(dish, matched, scored, totalCount) {
@@ -3495,6 +3502,10 @@ function renderKanaCandidates() {
 
 // ─── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+  // 対応料理数を実データから動的に表示
+  var dcn = document.getElementById('dishCountNum');
+  if (dcn && typeof DISH_DICT !== 'undefined') dcn.textContent = DISH_DICT.length;
+
   // 初期フィルターをワインに設定
   var dtf = document.getElementById('drinkTypeFilter');
   if (dtf) { dtf.value = 'wine'; updateSubFilter(); }
