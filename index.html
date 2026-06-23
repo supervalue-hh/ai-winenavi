@@ -561,12 +561,12 @@ input[type=range]::-webkit-slider-thumb {
     <p class="hero-sub">料理名を入れるだけで、ぴったりのワインや日本酒をご提案。なぜ合うのかの理由もわかりやすくご説明します。</p>
     <div class="hero-stats">
       <div>
-        <div class="hero-stat-num">🍷 247</div>
+        <div class="hero-stat-num" id="wineCountNum">🍷 247</div>
         <div class="hero-stat-label">ワイン</div>
       </div>
       <div style="width:1px;background:var(--bord);margin:4px 0;"></div>
       <div>
-        <div class="hero-stat-num">🍶 137</div>
+        <div class="hero-stat-num" id="sakeCountNum">🍶 137</div>
         <div class="hero-stat-label">日本酒</div>
       </div>
       <div style="width:1px;background:var(--bord);margin:4px 0;"></div>
@@ -3502,9 +3502,13 @@ function renderKanaCandidates() {
 
 // ─── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
-  // 対応料理数を実データから動的に表示
+  // 対応料理数・ワイン数・日本酒数を実データから動的に表示
   var dcn = document.getElementById('dishCountNum');
   if (dcn && typeof DISH_DICT !== 'undefined') dcn.textContent = DISH_DICT.length;
+  var wcn = document.getElementById('wineCountNum');
+  if (wcn && typeof WINE_DATA !== 'undefined') wcn.textContent = '🍷 ' + WINE_DATA.length;
+  var scn = document.getElementById('sakeCountNum');
+  if (scn && typeof SAKE_DATA !== 'undefined') scn.textContent = '🍶 ' + SAKE_DATA.length;
 
   // 初期フィルターをワインに設定
   var dtf = document.getElementById('drinkTypeFilter');
