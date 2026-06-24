@@ -59,6 +59,12 @@ body {
   font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
   padding: 4px 10px; border: 1px solid rgba(255,255,255,0.5); color: #fff;
 }
+.voice-toggle-btn {
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  padding: 7px 12px; border: 1px solid rgba(255,255,255,0.6); border-radius: 20px;
+  background: rgba(255,255,255,0.12); color: #fff; cursor: pointer;
+}
+.voice-toggle-btn:hover { background: rgba(255,255,255,0.22); }
 
 /* ══ HERO ════════════════════════════════════════════ */
 .hero-wrap {
@@ -413,6 +419,14 @@ select:focus { border-color: #111; }
   display: flex; align-items: center; justify-content: center; margin-top: 2px;
 }
 .step-text { font-size: 14px; color: #333; line-height: 1.75; }
+.app-footer-note { max-width: 720px; margin: 24px auto 0; padding: 14px 24px; color: #999; font-size: 11px; line-height: 1.7; border-top: 1px solid #eee; }
+.reset-fab {
+  position: fixed; bottom: 20px; right: 20px; z-index: 100;
+  padding: 14px 22px; border: none; border-radius: 30px;
+  background: #E6001A; color: #fff; font-size: 15px; font-weight: 700;
+  font-family: inherit; cursor: pointer; box-shadow: 0 4px 14px rgba(230,0,26,0.4);
+}
+.reset-fab:hover { background: #c40016; }
 .footer-space { height: 80px; }
 .voice-settings-btn { background: none; border: 1px solid var(--bord); border-radius: 20px; padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer; margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; }
 .voice-settings-btn:hover { background: #f5f5f5; }
@@ -532,8 +546,6 @@ input[type=range]::-webkit-slider-thumb {
 </head>
 <body>
 
-</script>
-
 <!-- ══ HEADER ══════════════════════════════════════════ -->
 <header class="header">
   <div class="header-logo">
@@ -544,10 +556,10 @@ input[type=range]::-webkit-slider-thumb {
     </svg>
   </div>
   <div class="header-text">
-    <div class="header-title">AIペアリングナビ <span style="font-weight:400;font-size:11px;opacity:0.85;">松戸五光店</span></div>
+    <div class="header-title">AIペアリングナビ <span style="font-weight:400;font-size:11px;opacity:0.85;">松戸五香店</span></div>
     <div class="header-sub">お料理に合う一本を、AIがご提案します</div>
   </div>
-  <div class="header-badge">β VERSION</div>
+  <button class="voice-toggle-btn" id="voiceToggleBtn" onclick="toggleVoice()">🔊 音声ON</button>
 </header>
 
 <!-- ══ HERO ══════════════════════════════════════════ -->
@@ -663,7 +675,7 @@ input[type=range]::-webkit-slider-thumb {
             <option value="all">種類：全部</option>
             <option value="wine">🍷 ワイン</option>
             <option value="sake">🍶 日本酒</option>
-            <option value="shochu">🥃 焼酎</option>
+            <!-- 焼酎はデータ未投入のためオープン時は非表示（投入後に復活可） -->
           </select>
           <select id="drinkSubFilter">
             <option value="all">詳細：全部</option>
@@ -740,8 +752,14 @@ input[type=range]::-webkit-slider-thumb {
     <div class="wine-cards" id="wineCards"></div>
     <div id="recipeSection"></div>
   </div>
+  <div class="app-footer-note">
+    お酒は20歳になってから。飲酒は適量を、飲酒運転は法律で禁止されています。<br>
+    ご提案するお料理にはアレルゲンを含む場合があります。アレルギーのある方は原材料表示をご確認ください。
+  </div>
   <div class="footer-space"></div>
 </main>
+
+<button class="reset-fab" onclick="resetApp()">🏠 最初に戻る</button>
 
 <script>
 // ─── 料理→ペアリングキーワード辞書 ───────────────────────────
@@ -2076,6 +2094,13 @@ var _DISH_READINGS = {
   });
 })();
 
+// HTMLエスケープ（ユーザー入力をinnerHTMLに入れる際の表示崩れ・注入対策 M-2）
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function(c) {
+    return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+  });
+}
+
 function matchDish(dish) {
   var d = dish.replace(/[\s　]/g, '');
 
@@ -2458,7 +2483,7 @@ function _buildRankHtml(counts) {
   return ranking.map(function(r, i) {
     return '<div class="ranking-item" onclick="quickDish(\'' + r.dish.replace(/'/g,"&#39;") + '\')">' +
       '<span class="ranking-num ' + numCls[i+1] + '">' + (i+1) + '</span>' +
-      '<span class="ranking-dish">' + r.dish + '</span>' +
+      '<span class="ranking-dish">' + escapeHtml(r.dish) + '</span>' +
       '<span class="ranking-count">' + r.count + '回</span>' +
     '</div>';
   }).join('');
@@ -2782,7 +2807,7 @@ function renderResults(dish, matched, scored, totalCount) {
     headerEl.innerHTML =
       '<div class="result-header">' +
         '<div class="result-overline">結果</div>' +
-        '<div class="result-dish-title">「<em>' + dish + '</em>」</div>' +
+        '<div class="result-dish-title">「<em>' + escapeHtml(dish) + '</em>」</div>' +
         '<div class="result-count">条件に合う' + _noResultLabel + 'が見つかりませんでした。予算や種別のフィルターを変えてみてください。</div>' +
       '</div>';
     cardsEl.innerHTML = '';
@@ -2817,7 +2842,7 @@ function renderResults(dish, matched, scored, totalCount) {
   headerEl.innerHTML =
     '<div class="result-header">' +
       '<div class="result-overline">AI Navigator Recommends</div>' +
-      '<div class="result-dish-title">「<em>' + dish + '</em>」に合う' + drinkLabel + '</div>' +
+      '<div class="result-dish-title">「<em>' + escapeHtml(dish) + '</em>」に合う' + drinkLabel + '</div>' +
       '<div class="result-count">' + totalAll + ' 商品から ' + (totalCount || scored.length) + ' 本を厳選 — ' + scored.length + ' 本表示中</div>' +
     '</div>';
 
@@ -2961,6 +2986,31 @@ function switchMode(mode) {
   document.getElementById('recipeSection').innerHTML = '';
   renderRankingPanel();
 }
+
+// ─── 最初に戻る（H-3）＋無操作オートリセット（H-2） ──────────────
+function resetApp() {
+  try {
+    _dishQuery = '';
+    var di = document.getElementById('dishInput'); if (di) di.value = '';
+    var wi = document.getElementById('wineInput'); if (wi) wi.value = '';
+    var si = document.getElementById('sakeInput'); if (si) si.value = '';
+    if (typeof renderKanaDisplay === 'function') renderKanaDisplay();
+    if (typeof renderKanaCandidates === 'function') renderKanaCandidates();
+    if (_ttsAudio) { _ttsAudio.pause(); }                 // 音声停止
+    if (window.speechSynthesis) window.speechSynthesis.cancel();
+    switchMode('dish');                                    // ホーム（料理→ワイン）へ
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } catch(e) {}
+}
+
+var _idleTimer = null;
+function resetIdleTimer() {
+  clearTimeout(_idleTimer);
+  _idleTimer = setTimeout(resetApp, 100000);  // 100秒（90〜120秒の範囲）無操作でリセット
+}
+['click','touchstart','keydown','pointerdown'].forEach(function(ev) {
+  document.addEventListener(ev, resetIdleTimer, true);
+});
 
 // ─── ワイン名オートコンプリート ────────────────────────────────
 var selectedWine = null;
@@ -3502,6 +3552,9 @@ function renderKanaCandidates() {
 
 // ─── DOMContentLoaded ─────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function() {
+  // 無操作オートリセットのタイマー開始（H-2）
+  if (typeof resetIdleTimer === 'function') resetIdleTimer();
+
   // 対応料理数・ワイン数・日本酒数を実データから動的に表示
   var dcn = document.getElementById('dishCountNum');
   if (dcn && typeof DISH_DICT !== 'undefined') dcn.textContent = DISH_DICT.length;
