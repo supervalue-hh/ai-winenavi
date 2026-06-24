@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AIペアリングナビ</title>
+<link rel="preconnect" href="https://super-river-d169.hithithit1114.workers.dev" crossorigin>
 <script src="wine_data.js"></script>
 <script src="sake_data.js"></script>
 <script src="shochu_data.js"></script>
@@ -2715,6 +2716,41 @@ var _SPEECH_READINGS = (function() {
   return pairs;
 })();
 
+// 伸ばし棒（ー）を直前の文字の母音に展開して自然に読ませる
+// 例: らーめん→らあめん、すてーき→すてえき、かれー→かれえ
+var _VOWEL_HIRA = {};
+(function() {
+  var groups = {
+    'あ':'あかさたなはまやらわがざだばぱゃぁ',
+    'い':'いきしちにひみりぎじぢびぴ',
+    'う':'うくすつぬふむゆるぐずづぶぷゅ',
+    'え':'えけせてねへめれげぜでべぺ',
+    'お':'おこそとのほもよろをごぞどぼぽょ'
+  };
+  for (var v in groups) {
+    for (var i = 0; i < groups[v].length; i++) _VOWEL_HIRA[groups[v][i]] = v;
+  }
+})();
+function expandChoonpu(text) {
+  var out = '';
+  for (var i = 0; i < text.length; i++) {
+    var ch = text[i];
+    if (ch === 'ー' && out.length > 0) {
+      var prev = out[out.length - 1];
+      var prevHira = prev;
+      var isKata = prev >= 'ァ' && prev <= 'ヶ';
+      if (isKata) prevHira = String.fromCharCode(prev.charCodeAt(0) - 0x60);
+      var vowel = _VOWEL_HIRA[prevHira];
+      if (vowel) {
+        out += isKata ? String.fromCharCode(vowel.charCodeAt(0) + 0x60) : vowel;
+        continue;
+      }
+    }
+    out += ch;
+  }
+  return out;
+}
+
 function applyReadingFix(text) {
   var out = text;
   // 手動辞書（色・複合語の保護など）を先に適用
@@ -2725,6 +2761,8 @@ function applyReadingFix(text) {
   for (var j = 0; j < _SPEECH_READINGS.length; j++) {
     out = out.split(_SPEECH_READINGS[j][0]).join(_SPEECH_READINGS[j][1]);
   }
+  // 伸ばし棒を母音に展開
+  out = expandChoonpu(out);
   return out;
 }
 
